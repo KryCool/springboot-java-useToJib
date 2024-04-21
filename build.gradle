@@ -60,5 +60,6 @@ jib {
     // }
     container {
         ports = ["8080"]
+        allowInsecureRegistries = true
     }
 }

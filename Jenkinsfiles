@@ -28,9 +28,9 @@ pipeline {
                     script{
                         // Build Images, Tag version and Push Images
                         sh """./gradlew -x test jib -Djib.to.image=192.168.1.100:8082/repository/test1/spring-boot:${env.PROJECT_VERSION}.build${env.BUILD_ID} \
-                        -Djib.to.auth.username=$username -Djib.to.auth.password=$password -Djib.allowInsecureRegistries=true"""
+                        -Djib.to.auth.username=$username -Djib.to.auth.password=$password"""
                         sh """./gradlew -x test jib -Djib.to.image=192.168.1.100:8082/repository/test1/spring-boot:latest.build${env.BUILD_ID} \
-                        -Djib.to.auth.username=$username -Djib.to.auth.password=$password -Djib.allowInsecureRegistries=true"""
+                        -Djib.to.auth.username=$username -Djib.to.auth.password=$password"""
                     }
             }
             
