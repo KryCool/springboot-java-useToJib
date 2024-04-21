@@ -13,8 +13,7 @@ pipeline {
                 git branch: 'feature/khanhtm', credentialsId: 'ssh-github', url: 'git@github.com:KryCool/springboot-java-useToJib.git'
             }
         }
-
-        stage('Build'){
+        stage('Build & Push Images'){
             steps{
                 script{
                     // Get version number in build.gradle
@@ -23,26 +22,18 @@ pipeline {
                     def version= value.split(/=/)[1]
                     //sh "echo $version"
                     // Set output to env
-                    env.PROJECT_VERSION = "$version"
-
-                    // Build Images and Tag version
-                    sh "./gradlew -x test jib --images=192.168.1.100:8082/repository/test1/spring-boot:${env.PROJECT_VERSION}.build${env.BUILD_ID} --info"
-                    sh "./gradlew -x test jib --images=192.168.1.100:8082/repository/test1/spring-boot:latest.build${env.BUILD_ID}" 
+                    env.PROJECT_VERSION = "$version".trim()
                 }
-            }
-        }
-        stage('Push Images to Nexus'){
-
-            steps{
                 withCredentials([usernamePassword(credentialsId: 'podman-login', passwordVariable: 'password', usernameVariable: 'username')]) {
-                script{
-                    sh '''
-                    podman -u "$username" -p"$password" 192.168.1.100:8082
-                    '''
-                    sh "podman push 192.168.1.100:8082/repository/test1/spring-boot:${env.PROJECT_VERSION}.build${env.BUILD_ID}"
-                    sh "podman push 192.168.1.100:8082/repository/test1/spring-boot:latest.build${env.BUILD_ID}"
-                }
+                    script{
+                        // Build Images, Tag version and Push Images
+                        sh """./gradlew -x test jib -Djib.to.image=192.168.1.100:8082/repository/test1/spring-boot:${env.PROJECT_VERSION}.build${env.BUILD_ID} \
+                        -Djib.to.auth.username=$username -Djib.to.auth.password=$password -Djib.allowInsecureRegistries=true"""
+                        sh """./gradlew -x test jib -Djib.to.image=192.168.1.100:8082/repository/test1/spring-boot:latest.build${env.BUILD_ID} \
+                        -Djib.to.auth.username=$username -Djib.to.auth.password=$password -Djib.allowInsecureRegistries=true"""
+                    }
             }
+            
             }
 
         }
