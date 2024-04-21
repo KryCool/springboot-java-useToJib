@@ -4,9 +4,9 @@ pipeline {
         label 'node_slave'
     }
 }
-    tools{
-        jdk 'openjdk11'
-    }
+    // tools{
+    //     jdk 'openjdk11'
+    // }
     stages {
         stage('Checkout & Pull Code') {
             steps {
