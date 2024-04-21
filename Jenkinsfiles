@@ -1,9 +1,12 @@
 pipeline {
     agent {
     node {
-        label 'master-node'
+        label 'node_slave'
     }
 }
+    tools{
+        jdk 'openjdk11'
+    }
     stages {
         stage('Checkout & Pull Code') {
             steps {
@@ -20,18 +23,21 @@ pipeline {
                     env.PROJECT_VERSION = output
 
                     // Build Images and Tag version
-                    sh './gradlew jib --images=192.168.1.100:8082/repository/test1/spring-boot:'+${env.PROJECT_VERSION}.build${env.BUILD_ID}
+                    sh './gradlew -X test jib --images=192.168.1.100:8082/repository/test1/spring-boot:'+${env.PROJECT_VERSION}.build${env.BUILD_ID} 
                 }
             }
         }
         stage('Push Images to Nexus'){
-            withCredentials([usernamePassword(credentialsId: 'podman-login', passwordVariable: 'password', usernameVariable: 'username')]) {
+
+            steps{
+                withCredentials([usernamePassword(credentialsId: 'podman-login', passwordVariable: 'password', usernameVariable: 'username')]) {
                 script{
                     sh '''
                     podman -u "$username" -p"$password" 192.168.1.100:8082
                     '''
                     sh "podman push 192.168.1.100:8082/repository/test1/spring-boot:'+${env.PROJECT_VERSION}.build${env.BUILD_ID}"
                 }
+            }
             }
 
         }
