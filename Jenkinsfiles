@@ -27,10 +27,10 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'podman-login', passwordVariable: 'password', usernameVariable: 'username')]) {
                     script{
                         // Build Images, Tag version and Push Images
-                        sh """./gradlew -x test jib -Djib.to.image=192.168.1.100:8082/repository/test1/spring-boot:${env.PROJECT_VERSION}.build${env.BUILD_ID} \
-                        -Djib.to.auth.username=$username -Djib.to.auth.password=$password"""
-                        sh """./gradlew -x test jib -Djib.to.image=192.168.1.100:8082/repository/test1/spring-boot:latest.build${env.BUILD_ID} \
-                        -Djib.to.auth.username=$username -Djib.to.auth.password=$password"""
+                        sh """./gradlew -x test jib --image=192.168.1.100:8082/repository/test1/realworld-spring-boot-java:${env.PROJECT_VERSION}.build${env.BUILD_ID} \
+                        -Djib.to.auth.username=$username -Djib.to.auth.password=$password -DsendCredentialsOverHttp=true"""
+                        sh """./gradlew -x test jib -Djib.to.image=192.168.1.100:8082/repository/test1/realworld-spring-boot-java:latest.build${env.BUILD_ID} \
+                        -Djib.to.auth.username=$username -Djib.to.auth.password=$password -DsendCredentialsOverHttp=true"""
                     }
             }
             
