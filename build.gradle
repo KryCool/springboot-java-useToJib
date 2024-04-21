@@ -51,15 +51,12 @@ jib {
                 architecture = 'amd64'
                 os = 'linux'
             }
-            platform {
-                architecture = 'arm64'
-                os = 'linux'
-            }
         }
     }
-    to {
-        image = "ghcr.io/raeperd/${rootProject.name}"
-    }
+    // to {
+    //     image = "192.168.1.100:8082/test1/repository/springboot"
+    //     tags = ['latest']
+    // }
     container {
         ports = ["8080"]
     }

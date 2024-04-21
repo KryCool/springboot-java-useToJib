@@ -1,0 +1,39 @@
+pipeline {
+    agent {
+    node {
+        label 'master-node'
+    }
+}
+    stages {
+        stage('Checkout & Pull Code') {
+            steps {
+                git branch: 'feature/khanhtm', credentialsId: 'ssh-github', url: 'git@github.com:KryCool/springboot-java-useToJib.git'
+            }
+        }
+
+        stage('Build'){
+            steps{
+                script{
+                    // Get version number in build.gradle
+                    def output = sh(script: './gradlew -q printVersion', returnStdout: true).trim()
+                    // Set output to env
+                    env.PROJECT_VERSION = output
+
+                    // Build Images and Tag version
+                    sh './gradlew jib --images=192.168.1.100:8082/repository/test1/spring-boot:'+${env.PROJECT_VERSION}.build${env.BUILD_ID}
+                }
+            }
+        }
+        stage('Push Images to Nexus'){
+            withCredentials([usernamePassword(credentialsId: 'podman-login', passwordVariable: 'password', usernameVariable: 'username')]) {
+                script{
+                    sh '''
+                    podman -u "$username" -p"$password" 192.168.1.100:8082
+                    '''
+                    sh "podman push 192.168.1.100:8082/repository/test1/spring-boot:'+${env.PROJECT_VERSION}.build${env.BUILD_ID}"
+                }
+            }
+
+        }
+    }
+}
