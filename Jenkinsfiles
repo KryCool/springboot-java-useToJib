@@ -18,12 +18,16 @@ pipeline {
             steps{
                 script{
                     // Get version number in build.gradle
-                    def output = sh(script: './gradlew -q printVersion', returnStdout: true).trim()
+                    def value = sh(returnStdout: true, script: "cat build.gradle | grep -o 'version = [^,]*'").trim()
+                   // sh "echo $value"
+                    def version= value.split(/=/)[1]
+                    //sh "echo $version"
                     // Set output to env
-                    env.PROJECT_VERSION = output
+                    env.PROJECT_VERSION = "$version"
 
                     // Build Images and Tag version
-                    sh './gradlew -X test jib --images=192.168.1.100:8082/repository/test1/spring-boot:'+${env.PROJECT_VERSION}.build${env.BUILD_ID} 
+                    sh "./gradlew -x test jib --images=192.168.1.100:8082/repository/test1/spring-boot:${env.PROJECT_VERSION}.build${env.BUILD_ID}"
+                    sh "./gradlew -x test jib --images=192.168.1.100:8082/repository/test1/spring-boot:latest.build${env.BUILD_ID}" 
                 }
             }
         }
@@ -35,7 +39,8 @@ pipeline {
                     sh '''
                     podman -u "$username" -p"$password" 192.168.1.100:8082
                     '''
-                    sh "podman push 192.168.1.100:8082/repository/test1/spring-boot:'+${env.PROJECT_VERSION}.build${env.BUILD_ID}"
+                    sh "podman push 192.168.1.100:8082/repository/test1/spring-boot:${env.PROJECT_VERSION}.build${env.BUILD_ID}"
+                    sh "podman push 192.168.1.100:8082/repository/test1/spring-boot:latest.build${env.BUILD_ID}"
                 }
             }
             }
