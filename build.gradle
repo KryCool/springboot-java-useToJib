@@ -59,7 +59,6 @@ jib {
     //     tags = ['latest']
     // }
     container {
-        sendCredentialsOverHttp = true
         ports = ["8080"]
     }
 }
