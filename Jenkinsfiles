@@ -1,10 +1,10 @@
 pipeline {
     agent {
-    node {
-        label 'node_slave'
+        node {
+            label 'node_slave'
+        }
     }
-}
-    tools{
+    tools {
         jdk 'openjdk11'
     }
     stages {
@@ -13,29 +13,37 @@ pipeline {
                 git branch: 'feature/khanhtm', credentialsId: 'ssh-github', url: 'git@github.com:KryCool/springboot-java-useToJib.git'
             }
         }
-        stage('Build & Push Images'){
-            steps{
-                script{
+        stage('Build & Push Images') {
+            steps {
+                script {
                     // Get version number in build.gradle
                     def value = sh(returnStdout: true, script: "cat build.gradle | grep -o 'version = [^,]*'").trim()
-                   // sh "echo $value"
-                    def version= value.split(/=/)[1]
+                    // sh "echo $value"
+                    def version = value.split(/ = /)[1]
                     //sh "echo $version"
                     // Set output to env
                     env.PROJECT_VERSION = "$version".trim()
                 }
                 withCredentials([usernamePassword(credentialsId: 'podman-login', passwordVariable: 'password', usernameVariable: 'username')]) {
-                    script{
+                    script {
                         // Build Images, Tag version and Push Images
                         sh """./gradlew -x test jib --image=192.168.1.100:8082/repository/test1/realworld-spring-boot-java:${env.PROJECT_VERSION}.build${env.BUILD_ID} \
                         -Djib.to.auth.username=$username -Djib.to.auth.password=$password -DsendCredentialsOverHttp=true"""
-                        sh """./gradlew -x test jib -Djib.to.image=192.168.1.100:8082/repository/test1/realworld-spring-boot-java:latest.build${env.BUILD_ID} \
+                        sh """./gradlew -x test jib -Djib.to.image=192.168.1.100:8082/repository/test1/realworld-spring-boot-java:latest \
                         -Djib.to.auth.username=$username -Djib.to.auth.password=$password -DsendCredentialsOverHttp=true"""
                     }
+                }
             }
-            
+        }
+        stage('SSH Deployment') {
+            steps {
+                sshPublisher(publishers: [sshPublisherDesc(configName: 'cloneOfNode',
+                transfers: [sshTransfer(cleanRemote: false, excludes: '',
+                execCommand: 'podman run -d -p 8080:8080 192.168.1.100:8082/repository/test1/realworld-spring-boot-java:latest',
+                execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+',
+                remoteDirectory: '', remoteDirectorySDF: false, removePrefix: '', sourceFiles: '')], usePromotionTimestamp: false,
+                useWorkspaceInPromotion: false, verbose: true)])
             }
-
         }
     }
 }
